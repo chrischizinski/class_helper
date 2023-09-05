@@ -11,7 +11,7 @@ check_pkgs <- function(){
   if (suppressPackageStartupMessages(!require("cli"))){
     install.packages("cli")
   }
-  }
+}
 
 
 get_os <- function(){ # from conjugateprior.org
@@ -20,10 +20,10 @@ get_os <- function(){ # from conjugateprior.org
     os <- sysinf['sysname']
     if (os == 'Darwin')
       os <- "osx"
-    } else if(os == 'Windows'){
-      os <- "windows"
-    }
-    else { ## mystery machine
+  } else if(os == 'Windows'){
+    os <- "windows"
+  }
+  else { ## mystery machine
     os <- .Platform$OS.type
     if (grepl("^darwin", R.version$os))
       os <- "osx"
@@ -36,8 +36,18 @@ get_os <- function(){ # from conjugateprior.org
 
 
 detect_token <- function() {
-  ifelse(is.na(gitcreds::gitcreds_get()$password), 0 , 1)
   
+  token_test <- tryCatch(gitcreds::gitcreds_get(), error=function(err) NA)
+  if(length(token_test) > 1){
+    
+    token_test <- ifelse(is.na(gitcreds::gitcreds_get()$password),0,1)
+    
+    
+    }else{
+      token_test <- 0
+      
+      }
+  return(token_test)
 }
 
 
@@ -51,7 +61,7 @@ check_git_installation <- function(){
   cli_div(theme = list(span.emph = list(color = "orange")))
   
   
-
+  
   ## Checking for git installation
   cli_h1("Checking git installation")
   
@@ -72,14 +82,15 @@ check_git_installation <- function(){
     dash_v <- trimws(gsub("[^[:digit:]. ]", "", git_test))
     cli::cli_alert_success("Git version {dash_v} installed on your system")
     git_symb <- col_green(symbol$tick)
-    }
+  }
   
   ## Checking for git configuration
   cli::cli_h1("Checking your git configuration")
   
   git_config <- gert::git_config_global()
   
-  if(length(git_config$name)< 2){
+  
+  if(!all(c("user.email","user.name") %in% git_config$name)){
     cli::cli_alert_danger("It appears that you do not have a user.name and user.email set up to interact with github.")
     cli::cli_text("Use  `{.emph usethis::use_git_config()}` to set your user.name and user.email.")
     user_symb <- col_red(symbol$cross)
@@ -91,12 +102,12 @@ check_git_installation <- function(){
   
   ## Checking for valid tokens
   cli::cli_h1("Checking your tokens")
-
+  
   git_tokenz <- detect_token()
   
   if(git_tokenz == 0){
     cli::cli_alert_danger("It appears that you do not have a current token set up")
-    cli::cli_text("Use  `{.emph gitcreds::gitcreds_set()}` to set your user.name and user.email.")
+    cli::cli_text("Use  `{.emph usethis::create_github_token()}` to help set up a token and then {.emph gitcreds::gitcreds_set()} to securely store your token.")
     
     token_symb <- col_red(symbol$cross)
     
@@ -112,5 +123,3 @@ check_git_installation <- function(){
   
 }
 
-
-check_git_installation()
