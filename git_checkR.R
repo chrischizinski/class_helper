@@ -1,12 +1,16 @@
 check_pkgs <- function(){
-  if (!require("usethis")){
+  
+  if (suppressPackageStartupMessages(!require("usethis"))){
     install.packages("usethis")
   }
   
-  if (!require("cli")){
-    install.packages("cli")
+  if (suppressPackageStartupMessages(!require("credentials"))){
+    install.packages("credentials")
   }
   
+  if (suppressPackageStartupMessages(!require("cli"))){
+    install.packages("cli")
+  }
   }
 
 
@@ -31,6 +35,11 @@ get_os <- function(){ # from conjugateprior.org
 
 
 
+detect_token <- function() {
+  ifelse(is.na(gitcreds::gitcreds_get()$password), 0 , 1)
+  
+}
+
 
 
 
@@ -52,20 +61,18 @@ check_git_installation <- function(){
   
   if(is.na(git_test)){
     cli_alert_danger("Git is not installed on your system.") 
+    git_symb <- col_red(symbol$cross)
     if(os == "windows"){
       cli::cli_text("Follow the instructions for {.emph Option 1} at happygitwithR: {.url https://happygitwithr.com/install-git#install-git-windows}.")
     }
     if(os == "osx"){
       cli::cli_text("Follow the instructions for {.emph Option 1} at happygitwithR: {.url https://happygitwithr.com/install-git#macos}.")
     }
-    
-    
-    }
-  
-  if(!is.na(git_test)){
+  }else if(!is.na(git_test)){
     dash_v <- trimws(gsub("[^[:digit:]. ]", "", git_test))
     cli::cli_alert_success("Git version {dash_v} installed on your system")
-  }
+    git_symb <- col_green(symbol$tick)
+    }
   
   ## Checking for git configuration
   cli::cli_h1("Checking your git configuration")
@@ -75,10 +82,33 @@ check_git_installation <- function(){
   if(length(git_config$name)< 2){
     cli::cli_alert_danger("It appears that you do not have a user.name and user.email set up to interact with github.")
     cli::cli_text("Use  `{.emph usethis::use_git_config()}` to set your user.name and user.email.")
+    user_symb <- col_red(symbol$cross)
     
   }else{
     cli::cli_alert_success("You have your git user.name and user.email set up")  
-    }
+    user_symb <- col_green(symbol$tick)
+  }
+  
+  ## Checking for valid tokens
+  cli::cli_h1("Checking your tokens")
+
+  git_tokenz <- detect_token()
+  
+  if(git_tokenz == 0){
+    cli::cli_alert_danger("It appears that you do not have a current token set up")
+    cli::cli_text("Use  `{.emph gitcreds::gitcreds_set()}` to set your user.name and user.email.")
+    
+    token_symb <- col_red(symbol$cross)
+    
+  }else{
+    cli::cli_alert_success("Your tokens are setup") 
+    token_symb <- col_green(symbol$tick)
+  }
+  
+  cli::cli_h2("Git check summary")
+  cli_dl(c("Git installed" = "{git_symb}",
+           "Username and email" = "{user_symb}",
+           "Token" = "{token_symb}"))
   
 }
 
